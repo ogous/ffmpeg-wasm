@@ -18,7 +18,9 @@ ENV PKG_CONFIG_PATH=$PKG_CONFIG_PATH:$EM_PKG_CONFIG_PATH
 ENV FFMPEG_ST=$FFMPEG_ST
 ENV FFMPEG_MT=$FFMPEG_MT
 RUN apt-get update && \
-      apt-get install -y pkg-config autoconf automake libtool ragel
+     sudo apt-get install -y pkg-config autoconf automake libtool ragel openssl libssl-dev
+# Check and print the OpenSSL version
+RUN openssl version && echo "OpenSSL version printed successfully"
 
 # Build x264
 FROM emsdk-base AS x264-builder
@@ -135,6 +137,8 @@ RUN bash -x /src/build.sh
 # Base ffmpeg image with dependencies and source code populated.
 FROM emsdk-base AS ffmpeg-base
 RUN embuilder build sdl2 sdl2-mt
+# Check and print the OpenSSL version
+RUN openssl version && echo "OpenSSL version printed successfully"
 ADD https://github.com/FFmpeg/FFmpeg.git#$FFMPEG_VERSION /src
 COPY --from=x264-builder $INSTALL_DIR $INSTALL_DIR
 COPY --from=x265-builder $INSTALL_DIR $INSTALL_DIR
@@ -150,6 +154,8 @@ COPY --from=zimg-builder $INSTALL_DIR $INSTALL_DIR
 # Build ffmpeg
 FROM ffmpeg-base AS ffmpeg-builder
 COPY build/ffmpeg.sh /src/build.sh
+     # Check and print the OpenSSL version
+RUN openssl version && echo "OpenSSL version printed successfully"
 RUN bash -x /src/build.sh \
       --enable-gpl \
       --enable-libx264 \
@@ -164,7 +170,9 @@ RUN bash -x /src/build.sh \
       --enable-libfreetype \
       --enable-libfribidi \
       --enable-libass \
-      --enable-libzimg 
+      --enable-libzimg \ 
+      --enable-openssl \
+      --enable-nonfree
 
 # Build ffmpeg.wasm
 FROM ffmpeg-builder AS ffmpeg-wasm-builder
